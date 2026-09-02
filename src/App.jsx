@@ -61,7 +61,7 @@ function templatePost(picks, customText) {
   if (customText.trim()) parts.push(customText.trim());
   parts.push('Learning it changed nothing. Building one thing with it changed the week.');
   parts.push(`If you also want to grow 10x, ${host} runs a free WhatsApp community where he shares daily updates around AI.\n\nJoin here: ${communityHref()}`);
-  parts.push('#AIFirst #AIWorkflows #UttamGupta');
+  parts.push('#Uttamguptaworkshop #Modernschool #AIwithmodernschool');
   return parts.join('\n\n');
 }
 
@@ -297,6 +297,11 @@ export default function App() {
   const [storyImg, setStoryImg] = useState('');
   const [imgName, setImgName] = useState('');
   const [error, setError] = useState('');
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [fbSending, setFbSending] = useState(false);
+  const [fbSent, setFbSent] = useState(false);
+  const [fbError, setFbError] = useState('');
 
   useEffect(() => { setStoryPicked(pickStorySet()); }, []);
 
@@ -324,7 +329,7 @@ export default function App() {
   const captionText = useMemo(
     () =>
       `Notes from the ${CONFIG.sessionTitle} with ${CONFIG.hostName}.\n\n` +
-        `Free WhatsApp community: ${communityHref()}\n\n#AIFirst #AIWorkflows #UttamGupta`,
+        `Free WhatsApp community: ${communityHref()}\n\n#Uttamguptaworkshop #Modernschool #AIwithmodernschool`,
     []
   );
 
@@ -429,6 +434,33 @@ export default function App() {
     setPicked((prev) =>
       prev.indexOf(i) > -1 ? prev.filter((x) => x !== i) : prev.concat(i)
     );
+  };
+
+  const sendFeedback = async () => {
+    if (!rating) return;
+    setFbError('');
+    setFbSending(true);
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating,
+          feedback: feedback.trim(),
+          session: CONFIG.sessionTitle,
+          host: CONFIG.hostName,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Request failed (${res.status})`);
+      }
+      setFbSent(true);
+    } catch (e) {
+      setFbError(e.message || 'Could not send feedback.');
+    } finally {
+      setFbSending(false);
+    }
   };
 
   const enoughPicked = picked.length >= 3;
@@ -766,7 +798,7 @@ export default function App() {
           )}
 
           {tab === 'Instagram story' && (
-            <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden' }}>
+            <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden', maxWidth: 880, width: '100%', margin: '0 auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0 }}>
                 <div className="session-pill">
                   <span className="dot" />
@@ -850,10 +882,6 @@ export default function App() {
                     <button className="btn btn-ghost" onClick={downloadStory}>
                       {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
                     </button>
-                    <p className="hint">
-                      Best on a phone. On desktop, the PNG just downloads — send it
-                      to yourself and post from the Instagram app.
-                    </p>
                   </div>
                 </div>
                 <ol className="steps" style={{ maxWidth: 760, width: '100%', alignSelf: 'center', marginTop: 4 }}>
@@ -906,6 +934,43 @@ export default function App() {
             </div>
           )}
 
+          <div className="card feedback-card">
+            {fbSent ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '24px 0', textAlign: 'center' }}>
+                <span className="eyebrow">Sent</span>
+                <p style={{ margin: '0 auto', fontSize: 17, lineHeight: 1.55, color: 'var(--text-strong)', maxWidth: '38ch', textAlign: 'center' }}>
+                  Thank You
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span className="eyebrow" style={{ alignSelf: 'flex-start' }}>Feedback</span>
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.015em', color: 'var(--text-strong)' }}>
+                    How was the session?
+                  </h3>
+                </div>
+                <StarRating value={rating} onChange={setRating} disabled={fbSending} />
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Anything specific? What clicked, what didn't. (Optional)"
+                  rows={4}
+                  disabled={fbSending}
+                />
+                {fbError && (
+                  <div style={{ padding: '10px 12px', borderRadius: 6, background: 'rgba(229,72,77,.1)', border: '1px solid rgba(229,72,77,.4)', color: '#ffb0b3', fontSize: 13 }}>
+                    {fbError}
+                  </div>
+                )}
+                <button className="btn" disabled={!rating || fbSending} onClick={sendFeedback} style={{ alignSelf: 'flex-start' }}>
+                  {fbSending && <span className="spinner" />}
+                  {fbSending ? 'Sending…' : 'Send feedback'}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div
             style={{
               display: 'flex',
@@ -927,14 +992,50 @@ export default function App() {
                 color: 'var(--av-grey-100)',
               }}
             >
-              Free WhatsApp community. Daily updates around AI.
+              <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Free WhatsApp community.</span>{' '}
+              Daily updates around AI.
             </span>
-            <a className="btn btn-outline" href={communityHref()} target="_blank" rel="noreferrer">
+            <a className="btn" href={communityHref()} target="_blank" rel="noreferrer">
               Join
             </a>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StarRating({ value, onChange, disabled }) {
+  const [hover, setHover] = useState(0);
+  const display = hover || value;
+  return (
+    <div className="stars" role="radiogroup" aria-label="Rate the session">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          className={`star${display >= n ? ' star--on' : ''}`}
+          aria-label={`${n} star${n > 1 ? 's' : ''}`}
+          aria-checked={value === n}
+          role="radio"
+          disabled={disabled}
+          onMouseEnter={() => !disabled && setHover(n)}
+          onMouseLeave={() => !disabled && setHover(0)}
+          onFocus={() => !disabled && setHover(n)}
+          onBlur={() => !disabled && setHover(0)}
+          onClick={() => !disabled && onChange(n)}
+        >
+          <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+            <path
+              d="M12 2.5l2.9 5.87 6.48.94-4.69 4.57 1.11 6.45L12 17.27l-5.8 3.06L7.3 13.88 2.62 9.31l6.48-.94z"
+              fill={display >= n ? 'var(--accent)' : 'none'}
+              stroke={display >= n ? 'var(--accent)' : 'var(--border-strong)'}
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      ))}
     </div>
   );
 }

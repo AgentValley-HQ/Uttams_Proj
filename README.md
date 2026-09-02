@@ -10,15 +10,15 @@ Built for the "Becoming an AI First Professional" session by Uttam Gupta.
 ## Stack
 
 - **Frontend**: Vite + React 18 (plain CSS with design tokens, no Tailwind)
-- **AI**: Anthropic Claude Haiku 4.5 via `/api/generate` serverless function
+- **AI**: OpenAI GPT-4o-mini via `/api/generate` serverless function
 - **Hosting**: Vercel (static frontend + Node serverless function)
 
-Handles 100+ concurrent users out of the box — Vercel serverless auto-scales, and Claude Haiku's rate limits sit well above the traffic.
+Handles 100+ concurrent users out of the box — Vercel serverless auto-scales, and OpenAI GPT-4o-mini rate limits sit well above the traffic.
 
 ## Prerequisites
 
 - Node.js 18 or newer — https://nodejs.org
-- An Anthropic API key — https://console.anthropic.com (paid, ~$0.001–0.005 per generation on Haiku)
+- An OpenAI API key — https://platform.openai.com/api-keys (paid, ~$0.0002 per generation on gpt-4o-mini)
 - (For deploy) A Vercel account — https://vercel.com/signup
 - (Recommended) A GitHub account for auto-deploy
 
@@ -32,7 +32,7 @@ npm install
 Create a `.env` file (copy from `.env.example`) and paste your key:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxx...
+OPENAI_API_KEY=sk-ant-api03-xxxxxxxx...
 ```
 
 Then, in **two separate terminals**:
@@ -69,7 +69,7 @@ The first `vercel dev` will ask you to link a project; pick "Create new" and fol
 
 3. Go to https://vercel.com/new, import the repo.
 4. In the "Environment Variables" step, add:
-   - Name: `ANTHROPIC_API_KEY`
+   - Name: `OPENAI_API_KEY`
    - Value: your `sk-ant-…` key
    - Environments: check all three (Production, Preview, Development)
 5. Click **Deploy**. Every future `git push` re-deploys automatically.
@@ -85,7 +85,7 @@ vercel deploy
 On first run it links a project. To add the key:
 
 ```powershell
-vercel env add ANTHROPIC_API_KEY
+vercel env add OPENAI_API_KEY
 ```
 
 Paste the key when prompted, pick all three environments. Then re-deploy:
@@ -107,7 +107,8 @@ Change and redeploy.
 ## Files
 
 ```
-├── api/generate.js       # Serverless function → Claude Haiku
+├── api/generate.js       # Serverless function → OpenAI gpt-4o-mini
+├── api/feedback.js       # Serverless function → Google Sheets webhook
 ├── src/
 │   ├── App.jsx           # Main React component (form, tabs, canvas render)
 │   ├── Logo.jsx          # Inline SVG modernschool.ai wordmark
@@ -124,10 +125,10 @@ Change and redeploy.
 
 ## Cost & scale notes
 
-- Each "Generate my post" call is ~800 output tokens on Haiku 4.5 → **≈ $0.003 per generation** at current pricing.
-- 100 users generating 3 posts each = ~$1 total.
+- Each "Generate my post" call is ~800 output tokens on gpt-4o-mini → **≈ $0.0002 per generation** at current pricing.
+- 100 users generating 3 posts each = ~$0.06 total.
 - Vercel Hobby free tier covers the traffic; only bump to Pro if you exceed 100 GB bandwidth / month or need custom domains beyond the free one.
-- Anthropic rate limits on Tier 1 already handle far above 100 concurrent — no queueing needed.
+- OpenAI Tier 1 gpt-4o-mini rate limits (10,000 RPM) handle far above 100 concurrent — no queueing needed.
 
 ## Swapping the logo for the real PNG
 

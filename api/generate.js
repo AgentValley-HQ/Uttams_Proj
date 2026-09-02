@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function firstSentence(s) {
   const m = String(s).match(/^[\s\S]*?[.!?](?=\s|$)/);
@@ -42,9 +42,13 @@ function trimPost(text, picks) {
 
 function buildPrompt({ host, session, community, picks, custom }) {
   const pickLines = picks.map((p) => `- ${p.title}: ${p.detail}`).join('\n');
-  const customBlock = custom
-    ? `Their own words  this is the backbone of the post. Rewrite and expand it, keep their meaning, angle and any specifics; never paste it back verbatim:\n"""\n${custom}\n"""`
+  const hasCustom = Boolean(custom);
+  const customBlock = hasCustom
+    ? `THEIR OWN WORDS — this is REQUIRED context and must be reflected in the final post. Keep every specific they mention (feelings, host name, reactions). Fix grammar and spelling, sharpen the sentences, but DO NOT strip their meaning or their voice. Never paste them back verbatim, but the final post MUST clearly carry their sentiment.\n"""\n${custom}\n"""`
     : 'They wrote nothing of their own.';
+  const setupInstruction = hasCustom
+    ? '(b) exactly two short lines of setup, one sentence each. USE THEIR OWN WORDS to build these two lines in first-person voice: turn their message (fixing grammar, tightening phrasing) into the setup. Keep any specifics they mentioned — if they named the host, keep the name; if they expressed a feeling, keep the feeling; if they said something was cool/great/valuable, that reaction must appear. Do NOT invent an expectation-vs-reality setup when they gave you their own words.'
+    : '(b) exactly two short lines of setup, one sentence each, what they expected versus what they actually got, with NO mention or preview of any of the numbered points.';
   const communityBlock =
     `If you also want to grow 10x, ${host} runs a free WhatsApp community where he shares daily updates around AI.\n\nJoin here: ${community}`;
   return [
@@ -52,26 +56,27 @@ function buildPrompt({ host, session, community, picks, custom }) {
     '',
     `Session: ${session} hosted by ${host}`,
     `Call the session exactly "${session}". Never rename it, never describe it as a session on some other topic.`,
-    'These are the ONLY points you may write about. Cover every one, in this order, one numbered item each, and never introduce any other topic, takeaway, statistic or detail about the session. Rewrite each in fresh wording, a different angle and sentence shape from the source note, never copying the phrasing:',
+    'These are the ONLY points you may write about in the numbered list. Cover every one, in this order, one numbered item each, and never introduce any other topic, takeaway, statistic or detail about the session in the numbered points. Rewrite each in fresh wording, a different angle and sentence shape from the source note, never copying the phrasing:',
     pickLines,
+    '',
     customBlock,
     '',
     'Rules:',
     '- Plain text only. Never use an em dash or an en dash anywhere. Where you would reach for one, use a comma or a colon, or recast the sentence.',
     '- Every sentence must be complete and must start with a capital letter. Never leave a lowercase fragment after a full stop.',
-    '- Structure it exactly like this, blank line between every paragraph: (a) one line saying they attended the session and who hosted it; (b) exactly two short lines of setup, one sentence each, what they expected versus what they actually got, with NO mention or preview of any of the numbered points; (c) the single line: Here is what stood out:; (d) the three numbered points, each starting with its number and a full stop ("1. ", "2. ", "3. ") as a short heading line under 60 characters, then ONE short sentence about it on the next line, maximum 25 words; (e) one closing line, one sentence, naming the real shift for them without repeating any point.',
+    `- Structure it exactly like this, blank line between every paragraph: (a) one line saying they attended the session and who hosted it; ${setupInstruction} (c) the single line: Here is what stood out:; (d) the three numbered points, each starting with its number and a full stop ("1. ", "2. ", "3. ") as a short heading line under 60 characters, then ONE short sentence about it on the next line, maximum 25 words; (e) one closing line, one sentence.${hasCustom ? ' This closing line MUST reflect their specific reaction or takeaway from their own words above — turn it into a single sentence in their voice.' : ' Name the real shift for them without repeating any point.'}`,
     '- Keep every point tight. A point is never more than two lines total, the heading line plus one sentence. Never two sentences of explanation, never a long clause pile.',
-    '- The setup lines and the closing takeaways must not repeat, summarise or hint at any numbered point, and must not name any session topic that is not in the list above. Each point appears exactly once, in the numbered list only.',
-    '- Invent nothing. No numbers, results, timelines, prices, attendee counts, tool names or claims that are not in the list above or in their own words. Everything you write must be about this session and these points only.',
+    '- The numbered points must not repeat, summarise or hint at each other. Each point appears exactly once, in the numbered list only.',
+    '- Invent nothing. No numbers, results, timelines, prices, attendee counts, tool names or claims that are not in the pool above or in their own words. Their own words are permitted source material for the setup and closing lines only.',
     '- Number every point. Never drop the numbers. The number and the short heading sit on one line, then a single line break, then the explaining sentence on its own line.',
     '- Use British spelling: optimise, optimisation, personalised, organisation.',
     '- First line must earn the read. Sentence case everywhere. No emoji, no exclamation marks, no words like unlock, supercharge, game-changer, revolutionise.',
     '- Specific and checkable, operator to operator. No hype, no hedging.',
-    '- Hard limit: 150 words total, and each numbered point gets exactly ONE sentence of at most 22 words. A second sentence under a point is a failure.',
+    '- Hard limit: 170 words total, and each numbered point gets exactly ONE sentence of at most 22 words. A second sentence under a point is a failure.',
     '- Vary the opening and the closing thought from anything formulaic; write it fresh this time.',
     '- Near the end, include this block verbatim, with the "Join here:" line as its own paragraph after a blank line:',
     communityBlock,
-    '- End with exactly: #AIFirst #AIWorkflows #UttamGupta',
+    '- End with exactly: #Uttamguptaworkshop #Modernschool #AIwithmodernschool',
     '- Return only the post text.',
   ].join('\n');
 }
@@ -110,8 +115,8 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    res.status(500).json({ error: 'Server missing ANTHROPIC_API_KEY.' });
+  if (!process.env.OPENAI_API_KEY) {
+    res.status(500).json({ error: 'Server missing OPENAI_API_KEY.' });
     return;
   }
   try {
@@ -129,16 +134,14 @@ export default async function handler(req, res) {
       custom: String(custom || '').trim(),
     });
 
-    const result = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+    const result = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 900,
+      temperature: 0.85,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const raw = result.content
-      .filter((c) => c.type === 'text')
-      .map((c) => c.text)
-      .join('\n');
+    const raw = result.choices?.[0]?.message?.content || '';
     const polished = trimPost(polish(raw), picks.slice(0, 3));
     res.status(200).json({ post: polished });
   } catch (err) {
