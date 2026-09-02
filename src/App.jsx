@@ -496,9 +496,20 @@ export default function App() {
         </p>
       </div>
 
-      <div className={`container grid${tab === 'Instagram story' ? ' grid--single' : ''}`}>
-        {/* LEFT column: input card (LinkedIn only — Instagram uses a single full-width card) */}
-        {tab === 'LinkedIn post' && (
+      <div className="container" style={{ display: 'flex', gap: 8, marginBottom: 20, justifyContent: 'center' }}>
+        {['LinkedIn post', 'Instagram story'].map((label) => (
+          <button
+            key={label}
+            className={`tab-btn${tab === label ? ' active' : ''}`}
+            onClick={() => setTab(label)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="container grid">
+        {/* LEFT column: input card (both tabs) */}
         <div className="card" style={{ padding: 32, minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 26, minWidth: 0 }}>
             <div className="session-pill">
@@ -688,32 +699,9 @@ export default function App() {
             )}
           </div>
         </div>
-        )}
 
         {/* RIGHT column: tabs + output */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['LinkedIn post', 'Instagram story'].map((label) => (
-                <button
-                  key={label}
-                  className={`tab-btn${tab === label ? ' active' : ''}`}
-                  onClick={() => setTab(label)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {tab === 'LinkedIn post' && generated && (
             <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0 }}>
@@ -798,93 +786,20 @@ export default function App() {
           )}
 
           {tab === 'Instagram story' && (
-            <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden', maxWidth: 880, width: '100%', margin: '0 auto' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0 }}>
-                <div className="session-pill">
-                  <span className="dot" />
-                  <span style={{ fontSize: 15, color: 'var(--av-grey-100)', overflowWrap: 'anywhere' }}>
-                    {CONFIG.sessionTitle} with {CONFIG.hostName}
-                  </span>
+            <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0, alignItems: 'center' }}>
+                <div className="story-frame">
+                  <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
                 </div>
-                <div className="ig-inner">
-                  <div className="story-frame">
-                    <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
-                  </div>
-                  <div className="ig-controls">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-strong)' }}>
-                        Add your own photo (optional)
-                      </span>
-                      <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 12,
-                          padding: '12px 14px',
-                          borderRadius: 6,
-                          background: 'var(--surface-inset)',
-                          border: '1px solid var(--border-subtle)',
-                          cursor: 'pointer',
-                          minWidth: 0,
-                        }}
-                      >
-                        <span
-                          style={{
-                            minWidth: 0,
-                            fontSize: 14,
-                            color: 'var(--av-grey-100)',
-                            overflowWrap: 'anywhere',
-                          }}
-                        >
-                          {imgName || 'No photo added'}
-                        </span>
-                        <span
-                          style={{
-                            flex: 'none',
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: 11,
-                            letterSpacing: '0.18em',
-                            textTransform: 'uppercase',
-                            color: 'var(--text-accent)',
-                          }}
-                        >
-                          Choose
-                        </span>
-                        <input type="file" accept="image/*" onChange={onImage} style={{ display: 'none' }} />
-                      </label>
-                      {storyImg && (
-                        <button
-                          onClick={() => { setStoryImg(''); setImgName(''); }}
-                          style={{
-                            alignSelf: 'flex-start',
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            fontFamily: 'var(--font-body)',
-                            fontSize: 13,
-                            color: 'var(--av-grey-300)',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                          }}
-                        >
-                          Remove photo
-                        </button>
-                      )}
-                    </div>
-                    <button className="btn btn-ghost" onClick={shuffleStory}>
-                      Shuffle my points
-                    </button>
-                    <div className="ig-divider" />
-                    <button className="btn btn-lg" onClick={shareToInstagram}>
-                      {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
-                    </button>
-                    <button className="btn btn-ghost" onClick={downloadStory}>
-                      {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', paddingTop: 4, borderTop: '1px solid var(--border-hairline)' }}>
+                  <button className="btn" onClick={shareToInstagram}>
+                    {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
+                  </button>
+                  <button className="btn btn-ghost" onClick={downloadStory}>
+                    {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
+                  </button>
                 </div>
-                <ol className="steps" style={{ maxWidth: 760, width: '100%', alignSelf: 'center', marginTop: 4 }}>
+                <ol className="steps" style={{ width: '100%', marginTop: 4 }}>
                   <li>
                     <strong>Tap Share to Instagram</strong> on your phone. Your caption is
                     copied at the same time.
