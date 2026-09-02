@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Logo from './Logo.jsx';
 import { CONFIG, FLAGSHIP, POOL } from './constants.js';
 
@@ -384,11 +384,45 @@ export default function App() {
     flash(setSaved);
   };
 
-  const copyPost = async () => {
-    if (await copyRich(postText)) flash(setCopied);
+  const copyAndOpenLinkedIn = async () => {
+    const ok = await copyRich(postText);
+    if (ok) flash(setCopied);
+    // LinkedIn's compose deep-link. Text can't be pre-filled (LinkedIn strips
+    // it), but this drops the user straight into the "Start a post" surface
+    // on desktop and mobile web. Ctrl+V / Cmd+V after the tab opens.
+    window.open(
+      'https://www.linkedin.com/feed/?shareActive=true',
+      '_blank',
+      'noopener,noreferrer'
+    );
   };
-  const copyCaption = async () => {
-    if (await copyRich(captionText)) flash(setCapCopied);
+
+  const shareToInstagram = async () => {
+    const url = await renderStoryPng({ picks: storyPicks, photoDataUrl: storyImg });
+    // Always copy caption so they can paste it as a text sticker.
+    await copyRich(captionText);
+    flash(setCapCopied);
+    // On mobile: use the native share sheet with the PNG. User picks
+    // Instagram → the Story composer opens with the image already loaded.
+    try {
+      if (navigator.canShare && navigator.share) {
+        const blob = await (await fetch(url)).blob();
+        const file = new File([blob], 'session-story.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'My session story' });
+          return;
+        }
+      }
+    } catch {
+      /* user cancelled or share failed — fall through to download */
+    }
+    // Desktop / share unsupported: download the PNG so they can move it to
+    // their phone and post from the Instagram app there.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'session-story.png';
+    a.click();
+    flash(setSaved);
   };
 
   const togglePick = (i) => {
@@ -690,14 +724,14 @@ export default function App() {
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
-                    gap: 18,
+                    gap: 12,
                     alignItems: 'center',
                     paddingTop: 20,
                     borderTop: '1px solid var(--border-hairline)',
                   }}
                 >
-                  <button className="btn" onClick={copyPost}>
-                    {copied ? 'Copied. Paste it into LinkedIn.' : 'Copy post'}
+                  <button className="btn" onClick={copyAndOpenLinkedIn}>
+                    {copied ? 'Copied. LinkedIn opened →' : 'Copy & open LinkedIn'}
                   </button>
                   <button
                     className="btn btn-ghost"
@@ -708,22 +742,24 @@ export default function App() {
                   >
                     {editing ? 'Done editing' : 'Edit text'}
                   </button>
-                  <span
-                    style={{
-                      flex: 1,
-                      minWidth: 220,
-                      fontSize: 15,
-                      lineHeight: 1.55,
-                      color: 'var(--text-strong)',
-                    }}
-                  >
-                    Post it on LinkedIn and tag{' '}
-                    <a href={profileHref()} target="_blank" rel="noreferrer">
-                      {CONFIG.hostName}
-                    </a>
-                    . I will read every single one.
-                  </span>
                 </div>
+                <ol className="steps">
+                  <li>
+                    <strong>Copy &amp; open LinkedIn.</strong> One click. Your post is copied,
+                    LinkedIn opens in a new tab.
+                  </li>
+                  <li>
+                    <strong>Paste it</strong> in the compose box — <kbd>Ctrl</kbd> +{' '}
+                    <kbd>V</kbd> (or <kbd>⌘</kbd> + <kbd>V</kbd> on Mac).
+                  </li>
+                  <li>
+                    <strong>Tag{' '}
+                      <a href={profileHref()} target="_blank" rel="noreferrer">
+                        {CONFIG.hostName}
+                      </a>
+                    </strong>{' '}before you post. He reads every one.
+                  </li>
+                </ol>
               </div>
             </div>
           )}
@@ -734,20 +770,36 @@ export default function App() {
                 <div className="story-frame">
                   <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 4, minWidth: 220, flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: 17, lineHeight: 1.55, color: 'var(--text-strong)', maxWidth: '30ch' }}>
-                    Share your learnings on your story and tag{' '}
-                    <span style={{ color: 'var(--text-accent)' }}>{CONFIG.hostInstagram}</span>. I will re-share every
-                    one of them.
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4, minWidth: 220, flex: 1 }}>
+                  <button className="btn" onClick={shareToInstagram}>
+                    {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
+                  </button>
+                  <button className="btn btn-ghost" onClick={downloadStory}>
+                    {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
+                  </button>
+                  <p className="hint">
+                    Best on a phone. On desktop, the PNG just downloads — send it
+                    to yourself and post from the Instagram app.
                   </p>
-                  <button className="btn" onClick={downloadStory}>
-                    {saved ? 'Saved to downloads' : 'Download story image'}
-                  </button>
-                  <button className="btn btn-ghost" onClick={copyCaption}>
-                    {capCopied ? 'Caption copied' : 'Copy caption'}
-                  </button>
                 </div>
               </div>
+              <ol className="steps" style={{ marginTop: 24 }}>
+                <li>
+                  <strong>Tap Share to Instagram</strong> on your phone. Your caption is
+                  copied at the same time.
+                </li>
+                <li>
+                  In the share sheet, pick <strong>Instagram → Add to Story</strong>. The
+                  image loads straight into the story composer.
+                </li>
+                <li>
+                  Add a text sticker, <strong>paste your caption</strong>, and tag{' '}
+                  <strong style={{ color: 'var(--text-accent)' }}>{CONFIG.hostInstagram}</strong>.
+                </li>
+                <li>
+                  <strong>Post.</strong> He re-shares every one.
+                </li>
+              </ol>
             </div>
           )}
 
