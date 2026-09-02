@@ -464,8 +464,9 @@ export default function App() {
         </p>
       </div>
 
-      <div className="container grid">
-        {/* LEFT column: input card */}
+      <div className={`container grid${tab === 'Instagram story' ? ' grid--single' : ''}`}>
+        {/* LEFT column: input card (LinkedIn only — Instagram uses a single full-width card) */}
+        {tab === 'LinkedIn post' && (
         <div className="card" style={{ padding: 32, minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 26, minWidth: 0 }}>
             <div className="session-pill">
@@ -655,6 +656,7 @@ export default function App() {
             )}
           </div>
         </div>
+        )}
 
         {/* RIGHT column: tabs + output */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 }}>
@@ -765,40 +767,113 @@ export default function App() {
 
           {tab === 'Instagram story' && (
             <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start', minWidth: 0 }}>
-                <div className="story-frame">
-                  <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0 }}>
+                <div className="session-pill">
+                  <span className="dot" />
+                  <span style={{ fontSize: 15, color: 'var(--av-grey-100)', overflowWrap: 'anywhere' }}>
+                    {CONFIG.sessionTitle} with {CONFIG.hostName}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4, minWidth: 220, flex: 1 }}>
-                  <button className="btn" onClick={shareToInstagram}>
-                    {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
-                  </button>
-                  <button className="btn btn-ghost" onClick={downloadStory}>
-                    {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
-                  </button>
-                  <p className="hint">
-                    Best on a phone. On desktop, the PNG just downloads — send it
-                    to yourself and post from the Instagram app.
-                  </p>
+                <div className="ig-inner">
+                  <div className="story-frame">
+                    <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
+                  </div>
+                  <div className="ig-controls">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-strong)' }}>
+                        Add your own photo (optional)
+                      </span>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          padding: '12px 14px',
+                          borderRadius: 6,
+                          background: 'var(--surface-inset)',
+                          border: '1px solid var(--border-subtle)',
+                          cursor: 'pointer',
+                          minWidth: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            minWidth: 0,
+                            fontSize: 14,
+                            color: 'var(--av-grey-100)',
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
+                          {imgName || 'No photo added'}
+                        </span>
+                        <span
+                          style={{
+                            flex: 'none',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: 11,
+                            letterSpacing: '0.18em',
+                            textTransform: 'uppercase',
+                            color: 'var(--text-accent)',
+                          }}
+                        >
+                          Choose
+                        </span>
+                        <input type="file" accept="image/*" onChange={onImage} style={{ display: 'none' }} />
+                      </label>
+                      {storyImg && (
+                        <button
+                          onClick={() => { setStoryImg(''); setImgName(''); }}
+                          style={{
+                            alignSelf: 'flex-start',
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 13,
+                            color: 'var(--av-grey-300)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          Remove photo
+                        </button>
+                      )}
+                    </div>
+                    <button className="btn btn-ghost" onClick={shuffleStory}>
+                      Shuffle my points
+                    </button>
+                    <div className="ig-divider" />
+                    <button className="btn btn-lg" onClick={shareToInstagram}>
+                      {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
+                    </button>
+                    <button className="btn btn-ghost" onClick={downloadStory}>
+                      {saved ? 'PNG downloaded ✓' : 'Download PNG only'}
+                    </button>
+                    <p className="hint">
+                      Best on a phone. On desktop, the PNG just downloads — send it
+                      to yourself and post from the Instagram app.
+                    </p>
+                  </div>
                 </div>
+                <ol className="steps" style={{ maxWidth: 760, width: '100%', alignSelf: 'center', marginTop: 4 }}>
+                  <li>
+                    <strong>Tap Share to Instagram</strong> on your phone. Your caption is
+                    copied at the same time.
+                  </li>
+                  <li>
+                    In the share sheet, pick <strong>Instagram → Add to Story</strong>. The
+                    image loads straight into the story composer.
+                  </li>
+                  <li>
+                    Add a text sticker, <strong>paste your caption</strong>, and tag{' '}
+                    <strong style={{ color: 'var(--text-accent)' }}>{CONFIG.hostInstagram}</strong>.
+                  </li>
+                  <li>
+                    <strong>Post.</strong> He re-shares every one.
+                  </li>
+                </ol>
               </div>
-              <ol className="steps" style={{ marginTop: 24 }}>
-                <li>
-                  <strong>Tap Share to Instagram</strong> on your phone. Your caption is
-                  copied at the same time.
-                </li>
-                <li>
-                  In the share sheet, pick <strong>Instagram → Add to Story</strong>. The
-                  image loads straight into the story composer.
-                </li>
-                <li>
-                  Add a text sticker, <strong>paste your caption</strong>, and tag{' '}
-                  <strong style={{ color: 'var(--text-accent)' }}>{CONFIG.hostInstagram}</strong>.
-                </li>
-                <li>
-                  <strong>Post.</strong> He re-shares every one.
-                </li>
-              </ol>
             </div>
           )}
 

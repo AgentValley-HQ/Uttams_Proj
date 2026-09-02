@@ -197,10 +197,33 @@ textarea:focus, input[type="text"]:focus {
   gap: 28px;
   align-items: start;
 }
+.grid.grid--single { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
   .hero h1 span.line { font-size: min(36px, 8vw); white-space: normal; }
   .page { padding: 0 20px 80px; }
+}
+
+.ig-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+}
+.ig-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 260px;
+  max-width: 420px;
+  flex: 1;
+}
+.ig-divider {
+  height: 1px;
+  background: var(--border-hairline);
+  margin: 6px 0;
 }
 
 .checkbox-row {
