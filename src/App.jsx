@@ -749,8 +749,7 @@ export default function App() {
                     LinkedIn opens in a new tab.
                   </li>
                   <li>
-                    <strong>Paste it</strong> in the compose box — <kbd>Ctrl</kbd> +{' '}
-                    <kbd>V</kbd> (or <kbd>⌘</kbd> + <kbd>V</kbd> on Mac).
+                    <strong>Paste the copied post</strong> into the compose box.
                   </li>
                   <li>
                     <strong>Tag{' '}
