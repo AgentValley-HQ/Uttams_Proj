@@ -299,12 +299,8 @@ export default function App() {
   const [error, setError] = useState('');
   const storyRef = useRef(null);
 
-  const generateStoryAndScroll = () => {
-    shuffleStory();
-    // give the DOM a tick to update, then smooth-scroll the preview into view
-    requestAnimationFrame(() => {
-      storyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+  const scrollToStory = () => {
+    storyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   useEffect(() => { setStoryPicked(pickStorySet()); }, []);
@@ -669,7 +665,7 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                <button className="btn btn-lg btn-full" onClick={generateStoryAndScroll}>
+                <button className="btn btn-lg btn-full" onClick={scrollToStory}>
                   Generate image
                 </button>
               </div>
