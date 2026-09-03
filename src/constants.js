@@ -6,12 +6,52 @@ export const CONFIG = {
   hostInstagram: '@uttamm_gupta',
 };
 
-// The 6 headline points shown as checkboxes.
-export const FLAGSHIP = [0, 1, 3, 5, 6, 7];
+// LinkedIn checkboxes. All 9 are shown, all 9 are eligible for the AI to
+// weave into the generated post.
+export const FLAGSHIP = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-// Every talking point from the session. Each generate mixes flagship picks
-// with fresh ones so no two posts come out the same.
-export const POOL = [
+export const LINKEDIN_POOL = [
+  {
+    title: 'Build something. Break something. Fix it. Share the lesson. Repeat',
+    detail: 'That loop is where every skill worth having gets built. Nobody good skipped the breaking part.',
+  },
+  {
+    title: 'Don’t ask, "What can AI do?" Ask, "What can I stop doing?"',
+    detail: "The best question flips the frame. AI's job is to take work off your plate, not add to it.",
+  },
+  {
+    title: 'Start messy. Stay consistent. Finish strong',
+    detail: 'Perfection at the start kills half of everything. Shipping ugly and iterating in public is how the compounding starts.',
+  },
+  {
+    title: "Don't just apply what you learn, share it. That's where opportunities find you",
+    detail: 'The people who post their work are the ones opportunities reach. Silent applying earns nothing.',
+  },
+  {
+    title: 'Learning creates knowledge. Applying it creates value',
+    detail: 'A finished course is knowledge sitting still. A shipped workflow is knowledge doing work.',
+  },
+  {
+    title: "Prompt → Workflow → Automation → System → Product. That's the real AI ladder",
+    detail: 'Most people stop at the prompt rung. Each step up the ladder pays more than the one below.',
+  },
+  {
+    title: "Don't just consume the AI revolution. Build something inside it",
+    detail: 'Reading hot takes is free and forgettable. The people who benefit are the ones building on top of the shift.',
+  },
+  {
+    title: 'A prompt gives you an answer. A system gives you leverage',
+    detail: 'One prompt solves one moment. A system runs the same problem 100 times without you touching it.',
+  },
+  {
+    title: 'Learn in public. Build in public. Compound in public',
+    detail: 'Every share is a compounding asset. Audience, proof and opportunities all stack over time.',
+  },
+];
+
+// Instagram story preview draws its 3 rotating bullets from this pool of 26
+// detailed talking points captured from the session itself.
+export const STORY_POOL = [
   { title: 'AI is not prompts and chatbots', detail: 'Almost everyone in the room thought of AI as a chat window. He spent the session on the four things behind it: workflows, automations, intelligent systems and products.' },
   { title: 'The four rungs: workflow, automation, system, product', detail: 'Each rung pays more than the one below it, and most professionals never leave the chat window. Seeing the whole ladder made it obvious where I was standing.' },
   { title: 'A workflow is the smallest thing worth rebuilding', detail: 'Take one process you repeat every week, write it out step by step, and only then decide where AI touches it. The writing down is most of the work.' },

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Logo from './Logo.jsx';
-import { CONFIG, FLAGSHIP, POOL } from './constants.js';
+import { CONFIG, FLAGSHIP, LINKEDIN_POOL, STORY_POOL } from './constants.js';
 
 const linkHref = (l) => (/^https?:\/\//.test(l) ? l : 'https://' + l);
 const profileHref = () => linkHref(CONFIG.hostLinkedIn);
@@ -32,7 +32,7 @@ function pickPostSet(pickedIdxs) {
   if (lead.length < 2) {
     lead = lead.concat(shuffle(ticked.filter((i) => lead.indexOf(i) < 0))).slice(0, 2);
   }
-  const rest = POOL.map((_, i) => i).filter((i) => lead.indexOf(i) < 0 && ticked.indexOf(i) < 0);
+  const rest = LINKEDIN_POOL.map((_, i) => i).filter((i) => lead.indexOf(i) < 0 && ticked.indexOf(i) < 0);
   const fresh = shuffle(rest.filter((i) => recent.indexOf(i) < 0));
   const filler = (fresh.length ? fresh : shuffle(rest)).slice(0, 3 - lead.length);
   const set = lead.concat(filler);
@@ -42,7 +42,7 @@ function pickPostSet(pickedIdxs) {
 
 function pickStorySet() {
   const recent = readRecent();
-  const all = shuffle(POOL.map((_, i) => i));
+  const all = shuffle(STORY_POOL.map((_, i) => i));
   const fresh = all.filter((i) => recent.indexOf(i) < 0);
   const picked = (fresh.length >= 3 ? fresh : fresh.concat(all.filter((i) => fresh.indexOf(i) < 0))).slice(0, 3);
   writeRecent(picked.concat(recent));
@@ -283,7 +283,7 @@ async function renderStoryPng({ picks, photoDataUrl }) {
 export default function App() {
   const [picked, setPicked] = useState(FLAGSHIP.slice(0, 3));
   const [postPicked, setPostPicked] = useState(FLAGSHIP.slice(0, 3));
-  const [storyPicked, setStoryPicked] = useState(FLAGSHIP.slice(0, 3));
+  const [storyPicked, setStoryPicked] = useState([0, 1, 2]);
   const [custom, setCustom] = useState('');
   const [tab, setTab] = useState('LinkedIn post');
   const [generated, setGenerated] = useState(false);
@@ -297,11 +297,15 @@ export default function App() {
   const [storyImg, setStoryImg] = useState('');
   const [imgName, setImgName] = useState('');
   const [error, setError] = useState('');
-  const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [fbSending, setFbSending] = useState(false);
-  const [fbSent, setFbSent] = useState(false);
-  const [fbError, setFbError] = useState('');
+  const storyRef = useRef(null);
+
+  const generateStoryAndScroll = () => {
+    shuffleStory();
+    // give the DOM a tick to update, then smooth-scroll the preview into view
+    requestAnimationFrame(() => {
+      storyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   useEffect(() => { setStoryPicked(pickStorySet()); }, []);
 
@@ -312,11 +316,11 @@ export default function App() {
 
   const activePostPicks = useMemo(() => {
     const idxs = postPicked.length ? postPicked : picked.slice(0, 3);
-    return idxs.map((i) => POOL[i]).filter(Boolean);
+    return idxs.map((i) => LINKEDIN_POOL[i]).filter(Boolean);
   }, [postPicked, picked]);
 
   const storyPicks = useMemo(
-    () => storyPicked.map((i) => POOL[i]).filter(Boolean),
+    () => storyPicked.map((i) => STORY_POOL[i]).filter(Boolean),
     [storyPicked]
   );
 
@@ -350,7 +354,7 @@ export default function App() {
           host: CONFIG.hostName,
           session: CONFIG.sessionTitle,
           community: communityHref(),
-          picks: nextPicks.map((i) => POOL[i]),
+          picks: nextPicks.map((i) => LINKEDIN_POOL[i]),
           custom: custom.trim(),
         }),
       });
@@ -436,33 +440,6 @@ export default function App() {
     );
   };
 
-  const sendFeedback = async () => {
-    if (!rating) return;
-    setFbError('');
-    setFbSending(true);
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rating,
-          feedback: feedback.trim(),
-          session: CONFIG.sessionTitle,
-          host: CONFIG.hostName,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Request failed (${res.status})`);
-      }
-      setFbSent(true);
-    } catch (e) {
-      setFbError(e.message || 'Could not send feedback.');
-    } finally {
-      setFbSending(false);
-    }
-  };
-
   const enoughPicked = picked.length >= 3;
   const countLabel = enoughPicked ? `${picked.length} selected` : `${picked.length} of 3`;
   const countColor = enoughPicked ? 'var(--text-accent)' : 'var(--av-grey-300)';
@@ -477,7 +454,7 @@ export default function App() {
   return (
     <div className="page">
       <div className="container header">
-        <Logo height={34} />
+        <Logo height={48} />
       </div>
 
       <div className="container hero">
@@ -574,7 +551,7 @@ export default function App() {
                               overflowWrap: 'anywhere',
                             }}
                           >
-                            {POOL[i].title}
+                            {LINKEDIN_POOL[i].title}
                           </span>
                         </div>
                       );
@@ -692,8 +669,8 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                <button className="btn btn-lg btn-full" onClick={shuffleStory}>
-                  Shuffle my points
+                <button className="btn btn-lg btn-full" onClick={generateStoryAndScroll}>
+                  Generate image
                 </button>
               </div>
             )}
@@ -786,12 +763,15 @@ export default function App() {
           )}
 
           {tab === 'Instagram story' && (
-            <div className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden' }}>
+            <div ref={storyRef} className="card" style={{ padding: 30, minWidth: 0, overflow: 'hidden', scrollMarginTop: 24 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 22, minWidth: 0, alignItems: 'center' }}>
                 <div className="story-frame">
                   <StoryPreview picks={storyPicks} photoDataUrl={storyImg} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', paddingTop: 4, borderTop: '1px solid var(--border-hairline)' }}>
+                  <button className="btn" onClick={shuffleStory}>
+                    Shuffle my points
+                  </button>
                   <button className="btn" onClick={shareToInstagram}>
                     {capCopied ? 'Shared / caption copied ✓' : 'Share to Instagram'}
                   </button>
@@ -849,43 +829,6 @@ export default function App() {
             </div>
           )}
 
-          <div className="card feedback-card">
-            {fbSent ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '24px 0', textAlign: 'center' }}>
-                <span className="eyebrow">Sent</span>
-                <p style={{ margin: '0 auto', fontSize: 17, lineHeight: 1.55, color: 'var(--text-strong)', maxWidth: '38ch', textAlign: 'center' }}>
-                  Thank You
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span className="eyebrow" style={{ alignSelf: 'flex-start' }}>Feedback</span>
-                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.015em', color: 'var(--text-strong)' }}>
-                    How was the session?
-                  </h3>
-                </div>
-                <StarRating value={rating} onChange={setRating} disabled={fbSending} />
-                <textarea
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Anything specific? What clicked, what didn't. (Optional)"
-                  rows={4}
-                  disabled={fbSending}
-                />
-                {fbError && (
-                  <div style={{ padding: '10px 12px', borderRadius: 6, background: 'rgba(229,72,77,.1)', border: '1px solid rgba(229,72,77,.4)', color: '#ffb0b3', fontSize: 13 }}>
-                    {fbError}
-                  </div>
-                )}
-                <button className="btn" disabled={!rating || fbSending} onClick={sendFeedback} style={{ alignSelf: 'flex-start' }}>
-                  {fbSending && <span className="spinner" />}
-                  {fbSending ? 'Sending…' : 'Send feedback'}
-                </button>
-              </div>
-            )}
-          </div>
-
           <div
             style={{
               display: 'flex',
@@ -916,41 +859,6 @@ export default function App() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StarRating({ value, onChange, disabled }) {
-  const [hover, setHover] = useState(0);
-  const display = hover || value;
-  return (
-    <div className="stars" role="radiogroup" aria-label="Rate the session">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          className={`star${display >= n ? ' star--on' : ''}`}
-          aria-label={`${n} star${n > 1 ? 's' : ''}`}
-          aria-checked={value === n}
-          role="radio"
-          disabled={disabled}
-          onMouseEnter={() => !disabled && setHover(n)}
-          onMouseLeave={() => !disabled && setHover(0)}
-          onFocus={() => !disabled && setHover(n)}
-          onBlur={() => !disabled && setHover(0)}
-          onClick={() => !disabled && onChange(n)}
-        >
-          <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
-            <path
-              d="M12 2.5l2.9 5.87 6.48.94-4.69 4.57 1.11 6.45L12 17.27l-5.8 3.06L7.3 13.88 2.62 9.31l6.48-.94z"
-              fill={display >= n ? 'var(--accent)' : 'none'}
-              stroke={display >= n ? 'var(--accent)' : 'var(--border-strong)'}
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      ))}
     </div>
   );
 }

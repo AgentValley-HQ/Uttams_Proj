@@ -377,34 +377,6 @@ kbd {
   vertical-align: middle;
 }
 
-.feedback-card {
-  padding: 26px 28px;
-  max-width: 640px;
-  width: 100%;
-  margin: 0 auto;
-}
-.stars {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-}
-.star {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  line-height: 0;
-  border-radius: 6px;
-  transition: transform 120ms cubic-bezier(.22,.61,.36,1);
-}
-.star:hover { transform: translateY(-1px); }
-.star:disabled { cursor: default; opacity: 0.6; }
-.star:disabled:hover { transform: none; }
-.star:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-ring);
-}
-
 .story-frame {
   width: 292px; height: 519px;
   flex: none;
